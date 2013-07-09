@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+import os
 
-from PySFML import sf
+_this_dir = os.path.dirname(__file__)
 
 Window = {
         'size': (600, 480),
@@ -25,20 +25,19 @@ Physics = {
         }
 
 Images = {
-        'dir': 'images'
+        'dir': os.path.join(_this_dir, 'images'),
         }
 
 Animations = {
-        'dir': Images['dir'] + '/animations'
+        'dir': os.path.join(Images['dir'], 'animations'),
         }
 
 Joystick = {
         'id': 0,
-        #'jump': 0,
-        'vomit': 2
+        'vomit': 2,
         }
 
 Keyboard = {
-        'jump': sf.Key.Up,
-        'vomit': sf.Key.A
+        'jump': 'up',
+        'vomit': 'a',
         }

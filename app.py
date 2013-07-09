@@ -1,3 +1,4 @@
+from functools import wraps
 from PySFML import sf as _sf
 
 _key_mapping = {
@@ -128,13 +129,23 @@ class App(Listener):
         self.windows = []
         self.key_events = []
 
+    def bind_key_event(self, f, bind_key=None, on_press=True):
+        if not callable(f):
+            raise TypeError("Bind object '%s' should be callable" % f)
+        self.key_events.append((bool(on_press), bind_key, f))
+
     def key_event(self, bind_key=None, on_press=True):
+        @wraps(f)
         def closure(f):
-            if not callable(f):
-                raise TypeError("Bind object '%s' should be callable" % f)
-            self.key_events.append((bool(on_press), bind_key, f))
+            self.bind_key_event(f, bind_key=bind_key, on_press=on_press)
             return f
         return closure
+
+    def is_pressed(self, key):
+        pass # TODO
+
+    def is_released(self, key):
+        pass # TODO
 
     def _key_events_bound_to(self, key, on_press):
         def decide_if_callback(key, bind):
@@ -332,7 +343,7 @@ class Text(Drawable): # TODO add font support
 
 class StatesApp(App):
     def __init__(self):
-        super(App, self).__init__()
+        super(StatesApp, self).__init__()
         self.states = {}
         self.current = None
         try:

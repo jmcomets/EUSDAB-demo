@@ -1,183 +1,176 @@
-# -*- coding: utf-8 -*-
-
-from random import choice as randomChoice
-from PySFML import sf
+import random
+import app
 from physics import Component as PhysicsComponent
 from animation import Animation, AnimationFactory
 from config import Player as config
-import utils
 
 # Player controls
-Controls = utils.enum('Left', 'Right', 'Jump', 'Ground', 'Attack', 'End')
+class Controls:
+    END = 0
+    JUMP = 1
+    LEFT = 2
+    RIGHT = 3
+    GROUND = 4
+    ATTACK = 5
 
-# Player state handling
 class State(object):
     def __init__(self, model):
         self.model = model
 
-    def OnStart(self):
-        pass
-
-    def OnStop(self):
-        pass
-
-    def Update(self):
-        pass
+    def update(self): pass
+    def on_start(self): pass
+    def on_end(self): pass
 
 class AnimatedState(State):
     def __init__(self, model, animation):
-        State.__init__(self, model)
+        super(AnimatedState, self).__init__(model)
         self.animation = animation
 
-    def OnStart(self):
+    def on_start(self):
         self.model.animation = self.animation
-        self.animation.Reset()
+        self.animation.reset()
 
-    def OnFinished(self):
-        self.model.Control(Controls.End)
+    def on_finished(self):
+        self.model.Control(Controls.END)
 
-    def Update(self):
-        State.Update(self)
-        if self.animation.IsFinished():
-            self.OnFinished()
+    def update(self):
+        super(AnimatedState, self).update()
+        if self.animation.finished:
+            self.on_finished()
 
 class MoveState(AnimatedState):
     def __init__(self, model, animation, speed):
-        AnimatedState.__init__(self, model, animation)
+        super(MoveState, self).__init__(model, animation)
         self.speed = speed
 
-    def Update(self):
-        AnimatedState.Update(self)
+    def update(self):
+        super(MoveState, self).update()
         self.model.physics.position.x += self.speed
 
 class JumpState(AnimatedState):
     def __init__(self, model, animation, force):
-        AnimatedState.__init__(self, model, animation)
+        super(JumpState, self).__init__(model, animation)
         self.force = force
 
-    def OnStart(self):
-        AnimatedState.OnStart(self)
-        if self.model.physics.IsOnGround():
+    def update(self):
+        super(JumpState, self).update()
+        if self.model.physics.ground:
+            self.on_ground()
+
+    def on_start(self):
+        super(JumpState, self).on_start()
+        if self.model.physics.ground:
             self.model.physics.velocity.y -= self.force
 
-    def Update(self):
-        AnimatedState.Update(self)
-        if self.model.physics.IsOnGround():
-            self.model.Control(Controls.Ground)
+    def on_ground(self):
+        self.model.control(Controls.GROUND)
 
-class JumpMoveState(AnimatedState):
+class JumpMoveState(JumpState):
     def __init__(self, model, animation, speed, force):
-        AnimatedState.__init__(self, model, animation)
+        super(JumpMoveState, self).__init__(model, animation, force)
         self.speed = speed
-        self.force = force
 
-    def OnStart(self):
-        AnimatedState.OnStart(self)
-        if self.model.physics.IsOnGround():
-            self.model.physics.velocity.y -= self.force
-
-    def Update(self):
-        AnimatedState.Update(self)
+    def update(self):
+        super(JumpMoveState, self).update()
         self.model.physics.position.x += self.speed
-        if self.model.physics.IsOnGround():
-            self.model.Control(Controls.Ground)
 
-class Model(sf.Drawable):
+class Model(app.Drawable):
     def __init__(self):
         self.physics = PhysicsComponent(config['size'])
         fact = AnimationFactory()
         self.states = {
-                'idle_left': AnimatedState(self, fact.Get('idle_left')),
-                'idle_right': AnimatedState(self, fact.Get('idle_right')),
-                'walk_left': MoveState(self, fact.Get('walk_left'),
+                'idle_left': AnimatedState(self, fact.get('idle_left')),
+                'idle_right': AnimatedState(self, fact.get('idle_right')),
+                'walk_left': MoveState(self, fact.get('walk_left'),
                     -config['speeds']['walk']),
-                'walk_right': MoveState(self, fact.Get('walk_right'),
+                'walk_right': MoveState(self, fact.get('walk_right'),
                     config['speeds']['walk']),
-                'idle_jump_left': JumpState(self, fact.Get('jump_left', False),
+                'idle_jump_left': JumpState(self, fact.get('jump_left', False),
                     config['accelerations']['jump']),
-                'idle_jump_right': JumpState(self, fact.Get('jump_right', False),
+                'idle_jump_right': JumpState(self, fact.get('jump_right', False),
                     config['accelerations']['jump']),
-                'jump_left': JumpMoveState(self, fact.Get('jump_left', False),
+                'jump_left': JumpMoveState(self, fact.get('jump_left', False),
                     -config['speeds']['walk'], config['accelerations']['jump']),
-                'jump_right': JumpMoveState(self, fact.Get('jump_right', False),
+                'jump_right': JumpMoveState(self, fact.get('jump_right', False),
                     config['speeds']['walk'], config['accelerations']['jump']),
-                'attack_left': AnimatedState(self, fact.Get('vomit_left', False)),
-                'attack_right': AnimatedState(self, fact.Get('vomit_right', False)),
+                'attack_left': AnimatedState(self, fact.get('vomit_left', False)),
+                'attack_right': AnimatedState(self, fact.get('vomit_right', False)),
                 }
         self.transitions = {
                 'idle_left': {
-                    (Controls.Left, True): 'walk_left',
-                    (Controls.Right, True): 'walk_right',
-                    (Controls.Jump, True): 'idle_jump_left',
-                    (Controls.Attack, True): 'attack_left'
+                    (Controls.LEFT, True): 'walk_left',
+                    (Controls.RIGHT, True): 'walk_right',
+                    (Controls.JUMP, True): 'idle_jump_left',
+                    (Controls.ATTACK, True): 'attack_left'
                     },
                 'idle_right': {
-                    (Controls.Left, True): 'walk_left',
-                    (Controls.Right, True): 'walk_right',
-                    (Controls.Jump, True): 'idle_jump_right',
-                    (Controls.Attack, True): 'attack_right'
+                    (Controls.LEFT, True): 'walk_left',
+                    (Controls.RIGHT, True): 'walk_right',
+                    (Controls.JUMP, True): 'idle_jump_right',
+                    (Controls.ATTACK, True): 'attack_right'
                     },
                 'walk_left': {
-                    (Controls.Left, False): 'idle_left',
-                    (Controls.Right, True): 'walk_right',
-                    (Controls.Jump, True): 'jump_left',
-                    (Controls.Attack, True): 'attack_left'
+                    (Controls.LEFT, False): 'idle_left',
+                    (Controls.RIGHT, True): 'walk_right',
+                    (Controls.JUMP, True): 'jump_left',
+                    (Controls.ATTACK, True): 'attack_left'
                     },
                 'walk_right': {
-                    (Controls.Left, True): 'walk_left',
-                    (Controls.Right, False): 'idle_right',
-                    (Controls.Jump, True): 'jump_right',
-                    (Controls.Attack, True): 'attack_right'
+                    (Controls.LEFT, True): 'walk_left',
+                    (Controls.RIGHT, False): 'idle_right',
+                    (Controls.JUMP, True): 'jump_right',
+                    (Controls.ATTACK, True): 'attack_right'
                     },
                 'idle_jump_left': {
-                    (Controls.Ground, True): 'idle_left',
-                    (Controls.Left, True): 'jump_left',
-                    (Controls.Right, True): 'jump_right'
+                    (Controls.GROUND, True): 'idle_left',
+                    (Controls.LEFT, True): 'jump_left',
+                    (Controls.RIGHT, True): 'jump_right'
                     },
                 'idle_jump_right': {
-                    (Controls.Ground, True): 'idle_right',
-                    (Controls.Right, True): 'jump_right',
-                    (Controls.Left, True): 'jump_left'
+                    (Controls.GROUND, True): 'idle_right',
+                    (Controls.RIGHT, True): 'jump_right',
+                    (Controls.LEFT, True): 'jump_left'
                     },
                 'jump_left': {
-                    (Controls.Ground, True): 'walk_left',
-                    (Controls.Left, False): 'idle_jump_left'
+                    (Controls.GROUND, True): 'walk_left',
+                    (Controls.LEFT, False): 'idle_jump_left'
                     },
                 'jump_right': {
-                    (Controls.Ground, True): 'walk_right',
-                    (Controls.Right, False): 'idle_jump_right'
+                    (Controls.GROUND, True): 'walk_right',
+                    (Controls.RIGHT, False): 'idle_jump_right'
                     },
                 'attack_left': {
-                    (Controls.End, True): 'idle_left'
+                    (Controls.END, True): 'idle_left'
                     },
                 'attack_right': {
-                    (Controls.End, True): 'idle_right'
+                    (Controls.END, True): 'idle_right'
                     }
                 }
         self.animation = None
-        self.stateKeySave = self.stateKey = 'idle_' + \
-                randomChoice(['left', 'right'])
-        self.state = self.states[self.stateKey]
-        self.state.OnStart()
+        self.saved_state_key = self.state_key = 'idle_' \
+                + random.choice(['left', 'right'])
+        self.state = self.states[self.state_key]
+        self.state.on_start()
 
-    def Update(self):
-        if self.stateKey != self.stateKeySave:
-            self.stateKeySave = self.stateKey
-            self.state.OnStop()
-            self.state = self.states[self.stateKey]
-            self.state.OnStart()
-        self.physics.Update()
-        self.state.Update()
-        self.animation.Advance()
+    def update(self):
+        if self.state_key != self.saved_state_key:
+            self.saved_state_key = self.state_key
+            self.state.on_end()
+            self.state = self.states[self.state_key]
+            self.state.on_start()
+        self.physics.update()
+        self.state.update()
+        self.animation.advance()
 
-    def Control(self, control, pred=True):
+    def control(self, control, pred=True):
         try:
-            self.stateKey = self.transitions[self.stateKey][(control, pred)]
+            self.state_key = self.transitions[self.state_key][(control, pred)]
         except KeyError: pass
 
-    def Render(self, target):
-        image = self.animation.Current()
-        sprite = sf.Sprite(image)
+    def render(self, graphics):
+        graphics.push_transform()
         x, y = self.physics.position
-        sprite.SetPosition(x, y)
-        target.Draw(sprite)
+        graphics.translate(x, y)
+        image = self.animation.current_image()
+        image.render(graphics)
+        graphics.pop_transform()

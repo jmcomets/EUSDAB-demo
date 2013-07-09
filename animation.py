@@ -1,64 +1,66 @@
-# -*- coding: utf-8 -*-
-
 import os
-from PySFML import sf
+import app
 from config import Animations as config
 
-class Animation(object):
+class Animation(app.Drawable):
     def __init__(self, frames, loop=True):
+        assert len(frames) > 0
         self.frames = frames
         self.loop = loop
         self.index = 0
 
-    def Advance(self):
+    def render(self, graphics):
+        self.frames[current].render(graphics)
+
+    def advance(self):
         nbFrames = len(self.frames)
         if nbFrames > 0 and self.loop:
             self.index = (self.index + 1) % nbFrames
-        elif self.index < nbFrames-1:
+        elif self.index < nbFrames - 1:
             self.index += 1
 
-    def Current(self):
+    def current_image(self):
         return self.frames[self.index]
 
-    def Reset(self):
+    def reset(self):
         self.index = 0
 
-    def IsFinished(self):
+    @property
+    def finished(self):
         return self.loop == False and self.index == len(self.frames) - 1
 
-class AnimationFactory(object):
-    instance = None
+class _AnimationFactory(object):
     animations = {}
 
-    def __new__(cls, *args, **kwargs):
-        """Singleton pattern boilerplate."""
-        if cls.instance is None:
-            cls.instance = super(AnimationFactory, cls).__new__(cls, *args, **kwargs)
-        return cls.instance
+    def all(self):
+        for key in os.listdir(config['dir']):
+            directory = os.path.join(config['dir'], key)
+            self.animations[key] = self.raw_get(key)
 
-    def All(self):
-        for animKey in os.listdir(config['dir']):
-            animDir = config['dir'] + '/' + animKey
-            animFrames = []
-            for animImage in os.listdir(animDir):
-                image = sf.Image()
-                image.LoadFromFile(animDir + '/' + animImage)
-                animFrames.append(image)
-            self.animations[animKey] = Animation(animFrames)
-
-    def Get(self, key, loop=True):
+    def get(self, key, *args, **kwargs):
         if key in self.animations:
             return self.animations[key]
         else:
-            animDir = config['dir'] + '/' + key
-            animFrames = []
-            animImages = os.listdir(animDir)
-            animImages.sort()
-            for animImage in animImages:
-                image = sf.Image()
-                anim = None
-                if image.LoadFromFile(animDir + '/' + animImage):
-                    animFrames.append(image)
-            anim = Animation(animFrames, loop)
-            self.animations[key] = anim
-            return anim
+            return self.raw_get(key)
+
+    def raw_get(self, key, *args, **kwargs):
+        directory = os.path.join(config['dir'], key)
+        images = os.listdir(directory)
+        images.sort()
+        frames = []
+        for image in images:
+            try:
+                image = app.Image(os.path.join(directory, image))
+                frames.append(image)
+            except IOError:
+                pass
+        anim = Animation(frames, *args, **kwargs)
+        self.animations[key] = anim
+        return anim
+
+_global_animation_factory = None
+def AnimationFactory():
+    global _global_animation_factory
+    if _global_animation_factory is None:
+        _global_animation_factory = _AnimationFactory()
+    return _global_animation_factory
