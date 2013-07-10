@@ -1,6 +1,7 @@
 from functools import wraps
 from PySFML import sf as _sf
 
+# Mapping to readable key
 _key_mapping = {
         _sf.Key.A        : 'a',
         _sf.Key.B        : 'b',
@@ -42,6 +43,14 @@ _key_mapping = {
         _sf.Key.LShift   : 'shift',
         _sf.Key.RShift   : 'shift',
         }
+# inverse mapping to a list of *real* keys
+_inverse_key_mapping = {}
+for key, value in _key_mapping.iteritems():
+    _inverse_key_mapping.setdefault(value, []).append(key)
+
+def _real_keys(key):
+    assert key in _inverse_key_mapping
+    return iter(_inverse_key_mapping[key])
 
 _color_mapping = {
         'red'     : _sf.Color.Red,
@@ -142,10 +151,20 @@ class App(Listener):
         return closure
 
     def is_pressed(self, key):
-        pass # TODO
+        if key in _inverse_key_mapping:
+            for real_key in _real_keys(key):
+                for w in self.windows:
+                    if w._impl.GetInput().IsKeyDown(real_key):
+                        return True
+        return False
 
     def is_released(self, key):
-        pass # TODO
+        if key in _inverse_key_mapping:
+            for real_key in _real_keys(key):
+                for w in self.windows:
+                    if w._impl.GetInput().IsKeyUp(real_key):
+                        return True
+        return False
 
     def _key_events_bound_to(self, key, on_press):
         def decide_if_callback(key, bind):
