@@ -9,8 +9,11 @@ class Animation(app.Drawable):
         self.loop = loop
         self.index = 0
 
+    def __iter__(self):
+        return iter(self.frames)
+
     def render(self, graphics):
-        self.frames[current].render(graphics)
+        graphics.draw(self.frames[self.index])
 
     def advance(self):
         nbFrames = len(self.frames)

@@ -81,18 +81,12 @@ class Model(app.Drawable):
         self.states = {
                 'idle_left': AnimatedState(self, fact.get('idle_left')),
                 'idle_right': AnimatedState(self, fact.get('idle_right')),
-                'walk_left': MoveState(self, fact.get('walk_left'),
-                    -config['speeds']['walk']),
-                'walk_right': MoveState(self, fact.get('walk_right'),
-                    config['speeds']['walk']),
-                'idle_jump_left': JumpState(self, fact.get('jump_left', False),
-                    config['accelerations']['jump']),
-                'idle_jump_right': JumpState(self, fact.get('jump_right', False),
-                    config['accelerations']['jump']),
-                'jump_left': JumpMoveState(self, fact.get('jump_left', False),
-                    -config['speeds']['walk'], config['accelerations']['jump']),
-                'jump_right': JumpMoveState(self, fact.get('jump_right', False),
-                    config['speeds']['walk'], config['accelerations']['jump']),
+                'walk_left': MoveState(self, fact.get('walk_left'), -config['speeds']['walk']),
+                'walk_right': MoveState(self, fact.get('walk_right'), config['speeds']['walk']),
+                'idle_jump_left': JumpState(self, fact.get('jump_left', False), config['accelerations']['jump']),
+                'idle_jump_right': JumpState(self, fact.get('jump_right', False), config['accelerations']['jump']),
+                'jump_left': JumpMoveState(self, fact.get('jump_left', False), -config['speeds']['walk'], config['accelerations']['jump']),
+                'jump_right': JumpMoveState(self, fact.get('jump_right', False), config['speeds']['walk'], config['accelerations']['jump']),
                 'attack_left': AnimatedState(self, fact.get('vomit_left', False)),
                 'attack_right': AnimatedState(self, fact.get('vomit_right', False)),
                 }
@@ -153,24 +147,25 @@ class Model(app.Drawable):
         self.state.on_start()
 
     def update(self):
+        self.physics.update()
+        if self.state:
+            self.state.update()
         if self.state_key != self.saved_state_key:
             self.saved_state_key = self.state_key
             self.state.on_end()
             self.state = self.states[self.state_key]
             self.state.on_start()
-        self.physics.update()
-        self.state.update()
         self.animation.advance()
 
     def control(self, control, pred=True):
         try:
             self.state_key = self.transitions[self.state_key][(control, pred)]
-        except KeyError: pass
+        except KeyError:
+            pass
 
     def render(self, graphics):
         graphics.push_transform()
         x, y = self.physics.position
         graphics.translate(x, y)
-        image = self.animation.current_image()
-        image.render(graphics)
+        graphics.draw(self.animation)
         graphics.pop_transform()

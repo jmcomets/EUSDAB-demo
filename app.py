@@ -294,6 +294,9 @@ class Graphics(object):
         self._set_shape_outline_color(circle, outline_color)
         self._draw(circle)
 
+    def draw(self, drawable):
+        drawable.render(self)
+
 class Drawable(object):
     def render(self, graphics):
         msg = "'render' method should be defined in custom Drawables"
@@ -309,6 +312,10 @@ class Image(Drawable):
 
     def render(self, graphics):
         graphics._draw(self._impl)
+
+    @property
+    def size(self):
+        return self._impl.GetSize()
 
 class Text(Drawable): # TODO add font support
     # style mapping
