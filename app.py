@@ -1,47 +1,47 @@
 from functools import wraps
-from PySFML import sf as _sf
+import sfml as _sf
 
 # Mapping to readable key
 _key_mapping = {
-        _sf.Key.A        : 'a',
-        _sf.Key.B        : 'b',
-        _sf.Key.C        : 'c',
-        _sf.Key.D        : 'd',
-        _sf.Key.E        : 'e',
-        _sf.Key.F        : 'f',
-        _sf.Key.G        : 'g',
-        _sf.Key.H        : 'h',
-        _sf.Key.I        : 'i',
-        _sf.Key.J        : 'j',
-        _sf.Key.K        : 'k',
-        _sf.Key.L        : 'l',
-        _sf.Key.M        : 'm',
-        _sf.Key.N        : 'n',
-        _sf.Key.O        : 'o',
-        _sf.Key.P        : 'p',
-        _sf.Key.Q        : 'q',
-        _sf.Key.R        : 'r',
-        _sf.Key.S        : 's',
-        _sf.Key.T        : 't',
-        _sf.Key.U        : 'u',
-        _sf.Key.V        : 'v',
-        _sf.Key.W        : 'w',
-        _sf.Key.X        : 'x',
-        _sf.Key.Y        : 'y',
-        _sf.Key.Z        : 'z',
-        _sf.Key.Up       : 'up',
-        _sf.Key.Down     : 'down',
-        _sf.Key.Left     : 'left',
-        _sf.Key.Right    : 'right',
-        _sf.Key.Space    : 'space',
-        _sf.Key.Return   : 'enter',
-        _sf.Key.Escape   : 'escape',
-        _sf.Key.LAlt     : 'alt',
-        _sf.Key.RAlt     : 'alt',
-        _sf.Key.LControl : 'ctrl',
-        _sf.Key.RControl : 'ctrl',
-        _sf.Key.LShift   : 'shift',
-        _sf.Key.RShift   : 'shift',
+        _sf.Keyboard.A        : 'a',
+        _sf.Keyboard.B        : 'b',
+        _sf.Keyboard.C        : 'c',
+        _sf.Keyboard.D        : 'd',
+        _sf.Keyboard.E        : 'e',
+        _sf.Keyboard.F        : 'f',
+        _sf.Keyboard.G        : 'g',
+        _sf.Keyboard.H        : 'h',
+        _sf.Keyboard.I        : 'i',
+        _sf.Keyboard.J        : 'j',
+        _sf.Keyboard.K        : 'k',
+        _sf.Keyboard.L        : 'l',
+        _sf.Keyboard.M        : 'm',
+        _sf.Keyboard.N        : 'n',
+        _sf.Keyboard.O        : 'o',
+        _sf.Keyboard.P        : 'p',
+        _sf.Keyboard.Q        : 'q',
+        _sf.Keyboard.R        : 'r',
+        _sf.Keyboard.S        : 's',
+        _sf.Keyboard.T        : 't',
+        _sf.Keyboard.U        : 'u',
+        _sf.Keyboard.V        : 'v',
+        _sf.Keyboard.W        : 'w',
+        _sf.Keyboard.X        : 'x',
+        _sf.Keyboard.Y        : 'y',
+        _sf.Keyboard.Z        : 'z',
+        _sf.Keyboard.UP       : 'up',
+        _sf.Keyboard.DOWN     : 'down',
+        _sf.Keyboard.LEFT     : 'left',
+        _sf.Keyboard.RIGHT    : 'right',
+        _sf.Keyboard.SPACE    : 'space',
+        _sf.Keyboard.RETURN   : 'enter',
+        _sf.Keyboard.ESCAPE   : 'escape',
+        _sf.Keyboard.L_ALT     : 'alt',
+        _sf.Keyboard.R_ALT     : 'alt',
+        _sf.Keyboard.L_CONTROL : 'ctrl',
+        _sf.Keyboard.R_CONTROL : 'ctrl',
+        _sf.Keyboard.L_SHIFT   : 'shift',
+        _sf.Keyboard.R_SHIFT   : 'shift',
         }
 # inverse mapping to a list of *real* keys
 _inverse_key_mapping = {}
@@ -53,14 +53,15 @@ def _real_keys(key):
     return iter(_inverse_key_mapping[key])
 
 _color_mapping = {
-        'red'     : _sf.Color.Red,
-        'blue'    : _sf.Color.Blue,
-        'cyan'    : _sf.Color.Cyan,
-        'black'   : _sf.Color.Black,
-        'white'   : _sf.Color.White,
-        'green'   : _sf.Color.Green,
-        'yellow'  : _sf.Color.Yellow,
-        'magenta' : _sf.Color.Magenta,
+        'red'         :  _sf.Color.RED,
+        'blue'        :  _sf.Color.BLUE,
+        'cyan'        :  _sf.Color.CYAN,
+        'black'       :  _sf.Color.BLACK,
+        'white'       :  _sf.Color.WHITE,
+        'green'       :  _sf.Color.GREEN,
+        'yellow'      :  _sf.Color.YELLOW,
+        'magenta'     :  _sf.Color.MAGENTA,
+        'transparent' :  _sf.Color.TRANSPARENT,
         }
 
 def _to_actual_color(color):
@@ -90,47 +91,55 @@ class Window(object):
             closable=True, resizable=False, mouse=True, vsync=True,
             fullscreen=False, enable_key_repeat=False):
         style = 0
-        if closable: style |= _sf.Style.Close
-        if resizable: style |= _sf.Style.Resize
-        if fullscreen: style |= _sf.Style.Fullscreen
+        if closable: style |= _sf.Style.CLOSE
+        if resizable: style |= _sf.Style.RESIZE
+        if fullscreen: style |= _sf.Style.FULLSCREEN
         self._impl = _sf.RenderWindow(_sf.VideoMode(*size), title, style)
-        self._impl.EnableKeyRepeat(enable_key_repeat)
-        self._impl.SetFramerateLimit(fps)
-        self._impl.UseVerticalSync(vsync)
-        self._impl.ShowMouseCursor(mouse)
+        self._impl.key_repeat_enabled = enable_key_repeat
+        self._impl.framerate_limit = fps
+        self._impl.vertical_synchronization = vsync
+        self._impl.mouse_cursor_visible = mouse
         if icon is not None:
-            icon_image = _sf.Image()
-            if not icon_image.LoadFromFile(icon):
-                raise IOError("Image '%s' couldn't be loaded" % icon)
-            self._impl.SetIcon(icon_image.GetWidth(), icon_image.GetHeight(),
-                    icon_image.GetPixels())
+            icon_image = _sf.Image.from_file(icon)
+            self._impl.icon = icon_image.pixels
         self.graphics = Graphics(self)
 
     def mouse_position(self):
-        input_ = self._impl.GetInput()
-        x, y = input_.GetMouseX(), input_.GetMouseY()
-        return self._impl.ConvertCoords(x, y)
+        return _sf.Mouse.get_position(self._impl)
 
     def set_active(self, active):
-        self._impl.SetActive(active)
+        self._impl.active = active
 
     def display(self):
-        self._impl.Display()
+        self._impl.display()
 
     def clear(self):
-        self._impl.Clear()
+        self._impl.clear()
 
     def close(self):
-        self._impl.Close()
+        self._impl.close()
 
     def is_opened(self):
-        return self._impl.IsOpened()
+        return self._impl.is_open
 
     def draw(self, drawable):
         drawable.render(self.graphics)
 
-    width = property(lambda x: x._impl.GetWidth, lambda x: x._impl.SetWidth)
-    height = property(lambda x: x._impl.GetHeight, lambda x: x._impl.SetHeight)
+    @property
+    def width(self):
+        return self._impl.width
+
+    @width.setter
+    def set_width(self, w):
+        self._impl.width = w
+
+    @property
+    def height(self):
+        return self._impl.height
+
+    @height.setter
+    def set_height(self, h):
+        self._impl.height = h
 
 class App(Listener):
     def __init__(self):
@@ -152,18 +161,14 @@ class App(Listener):
 
     def is_pressed(self, key):
         if key in _inverse_key_mapping:
-            for real_key in _real_keys(key):
-                for w in self.windows:
-                    if w._impl.GetInput().IsKeyDown(real_key):
-                        return True
+            kb = _sf.Keyboard
+            return any(kb.is_key_pressed(k) for k in _real_keys(key))
         return False
 
     def is_released(self, key):
         if key in _inverse_key_mapping:
-            for real_key in _real_keys(key):
-                for w in self.windows:
-                    if w._impl.GetInput().IsKeyUp(real_key):
-                        return True
+            kb = _sf.Keyboard
+            return any(not kb.is_key_pressed(k) for k in _real_keys(key))
         return False
 
     def _key_events_bound_to(self, key, on_press):
@@ -185,19 +190,18 @@ class App(Listener):
         while self.windows:
             closed = []
             for window in self.windows:
-                event = _sf.Event()
-                while window._impl.GetEvent(event):
-                    if event.Type == _sf.Event.Closed:
+                for event in window.events:
+                    if type(event) is _sf.CloseEvent:
                         window.close()
-                    elif event.Type == _sf.Event.KeyPressed:
-                        key = event.Key.Code
-                        if key in _key_mapping:
+                    elif type(event) is _sf.KeyEvent:
+                        if event.code not in _key_mapping:
+                            continue
+                        key = event.code
+                        if event.pressed:
                             action = _key_mapping[key]
                             self._key_events_bound_to(action, True)
                             self.key_pressed(action)
-                    elif event.Type == _sf.Event.KeyReleased:
-                        key = event.Key.Code
-                        if key in _key_mapping:
+                        else:
                             action = _key_mapping[key]
                             self._key_events_bound_to(action, False)
                             self.key_released(action)
@@ -225,12 +229,12 @@ class Graphics(object):
         self.push_transform()
         self.summed_transform = 0, 0
 
-    def _draw(self, drawable):
+    def _draw(self, drawable, states):
         assert isinstance(drawable, _sf.Drawable)
         sx, sy = self.summed_transform
-        drawable.Move(sx, sy)
-        self.window._impl.Draw(drawable)
-        drawable.Move(-sx, -sy)
+        drawable.states.transform.translate((sx, sy))
+        self.window._impl.draw(drawable)
+        drawable.states.transform.translate((-sx, -sy))
 
     def translate(self, x, y):
         tx, ty = self.transform_stack[-1]
@@ -252,48 +256,6 @@ class Graphics(object):
         if len(self.transform_stack) == 0:
             self.push_transform()
 
-    def _set_shape_color(self, shape, color):
-        if color == 'transparent':
-            shape.EnableFill(False)
-        else:
-            actual_color = _to_actual_color(color)
-            for i in xrange(shape.GetNbPoints()):
-                shape.SetPointColor(i, actual_color)
-
-    def _set_shape_outline_color(self, shape, color):
-        if color == 'transparent':
-            shape.EnableOutline(False)
-        else:
-            actual_color = _to_actual_color(color)
-            for i in xrange(shape.GetNbPoints()):
-                shape.SetPointOutlineColor(i, actual_color)
-
-    def draw_line(self, start, end, color='white', width=1):
-        x, y = start
-        w, h = map(lambda x: x[1] - x[0], zip(start, end))
-        line = _sf.Shape.Line(0, 0, w, h, width, _sf.Color.White)
-        line.SetPosition(x, y)
-        self._set_shape_color(line, color)
-        self._draw(line)
-
-    def draw_rect(self, start, end, fill_color='white',
-            outline_color='transparent', outline_width=0):
-        x, y = start
-        w, h = map(lambda x: x[1] - x[0], zip(start, end))
-        rect = _sf.Shape.Rectangle(0, 0, w, h, _sf.Color.White, outline_width)
-        rect.SetPosition(x, y)
-        self._set_shape_color(rect, fill_color)
-        self._set_shape_outline_color(rect, outline_color)
-        self._draw(rect)
-
-    def draw_circle(self, center, radius, fill_color='white',
-            outline_color='transparent', outline_width=1):
-        circle = _sf.Shape.Circle(0, 0, radius, _sf.Color.White, outline_width)
-        circle.SetPosition(*center)
-        self._set_shape_color(circle, fill_color)
-        self._set_shape_outline_color(circle, outline_color)
-        self._draw(circle)
-
     def draw(self, drawable):
         drawable.render(self)
 
@@ -305,67 +267,13 @@ class Drawable(object):
 class Image(Drawable):
     def __init__(self, filename):
         super(Drawable, self).__init__()
-        image = _sf.Image()
-        if not image.LoadFromFile(filename):
-            raise IOError("Image '%s' couldn't be loaded" % filename)
-        self._impl = _sf.Sprite(image)
+        tx = _sf.Texture.from_file(filename)
+        self._impl = _sf.Sprite(tx)
 
     def render(self, graphics):
         graphics._draw(self._impl)
 
-    @property
-    def size(self):
-        return self._impl.GetSize()
-
-class Text(Drawable): # TODO add font support
-    # style mapping
-    _style_mapping = {
-            'regular':    0,
-            'bold':       1,
-            'italic':     2,
-            'underlined': 4,
-            }
-
-    def __init__(self, text=''):
-        self._style = _to_style_strs(0)
-        self._impl = _sf.String(str(text))
-
-    def _to_style_strs(self, val):
-        style_strs = []
-        for key, value in _style_mapping.iteritems():
-            if (val | value) == val:
-                style_strs.append(key)
-        assert_msg = 'Style mapping not bijective, encountered value %s' % val
-        assert _to_impl_style(style_strs) == val, assert_msg
-        return tuple(style_strs)
-
-    def _to_impl_style(self, style_strs):
-        val = 0
-        for s in style_strs:
-            if s in _style_mapping:
-                val |= _style_mapping[s]
-            else:
-                raise ValueError('Invalid style %s' % s)
-        return val
-
-    @property
-    def style(self):
-        return self._to_style_strs(self._impl.GetStyle())
-
-    @style.setter
-    def set_style(self, style_strs):
-        self._impl.SetStyle(self._to_impl_style(style_strs))
-
-    @property
-    def text(self):
-        return self._impl.GetText()
-
-    @text.setter
-    def set_text(self, text):
-        self._impl.SetText(str(text))
-
-    def render(self, graphics):
-        graphics._draw(self._impl)
+    size = property(lambda x: x._impl.size)
 
 class StatesApp(App):
     def __init__(self):
