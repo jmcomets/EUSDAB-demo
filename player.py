@@ -31,7 +31,7 @@ class AnimatedState(State):
         self.animation.reset()
 
     def on_finished(self):
-        self.model.Control(Controls.END)
+        self.model.control(Controls.END)
 
     def update(self):
         super(AnimatedState, self).update()
@@ -83,12 +83,12 @@ class Model(app.Drawable):
                 'idle_right': AnimatedState(self, fact.get('idle_right')),
                 'walk_left': MoveState(self, fact.get('walk_left'), -config['speeds']['walk']),
                 'walk_right': MoveState(self, fact.get('walk_right'), config['speeds']['walk']),
-                'idle_jump_left': JumpState(self, fact.get('jump_left', False), config['accelerations']['jump']),
-                'idle_jump_right': JumpState(self, fact.get('jump_right', False), config['accelerations']['jump']),
-                'jump_left': JumpMoveState(self, fact.get('jump_left', False), -config['speeds']['walk'], config['accelerations']['jump']),
-                'jump_right': JumpMoveState(self, fact.get('jump_right', False), config['speeds']['walk'], config['accelerations']['jump']),
-                'attack_left': AnimatedState(self, fact.get('vomit_left', False)),
-                'attack_right': AnimatedState(self, fact.get('vomit_right', False)),
+                'idle_jump_left': JumpState(self, fact.get('jump_left', loop=False), config['accelerations']['jump']),
+                'idle_jump_right': JumpState(self, fact.get('jump_right', loop=False), config['accelerations']['jump']),
+                'jump_left': JumpMoveState(self, fact.get('jump_left', loop=False), -config['speeds']['walk'], config['accelerations']['jump']),
+                'jump_right': JumpMoveState(self, fact.get('jump_right', loop=False), config['speeds']['walk'], config['accelerations']['jump']),
+                'attack_left': AnimatedState(self, fact.get('vomit_left', loop=False)),
+                'attack_right': AnimatedState(self, fact.get('vomit_right', loop=False)),
                 }
         self.transitions = {
                 'idle_left': {
@@ -164,8 +164,8 @@ class Model(app.Drawable):
             pass
 
     def render(self, graphics):
-        graphics.push_transform()
+        graphics.push_state()
         x, y = self.physics.position
         graphics.translate(x, y)
         graphics.draw(self.animation)
-        graphics.pop_transform()
+        graphics.pop_state()

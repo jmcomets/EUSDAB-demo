@@ -190,7 +190,7 @@ class App(Listener):
         while self.windows:
             closed = []
             for window in self.windows:
-                for event in window.events:
+                for event in window._impl.events:
                     if type(event) is _sf.CloseEvent:
                         window.close()
                     elif type(event) is _sf.KeyEvent:
@@ -225,36 +225,28 @@ class App(Listener):
 class Graphics(object):
     def __init__(self, window):
         self.window = window
-        self.transform_stack = []
-        self.push_transform()
-        self.summed_transform = 0, 0
+        self.graphic_states = []
+        self.push_state()
 
-    def _draw(self, drawable, states):
+    def _draw(self, drawable):
         assert isinstance(drawable, _sf.Drawable)
-        sx, sy = self.summed_transform
-        drawable.states.transform.translate((sx, sy))
-        self.window._impl.draw(drawable)
-        drawable.states.transform.translate((-sx, -sy))
+        self.window._impl.draw(drawable, self.graphic_states[-1])
 
     def translate(self, x, y):
-        tx, ty = self.transform_stack[-1]
-        sx, sy = self.summed_transform
-        tx += x ; ty += y
-        sx += x ; sy += y
-        self.summed_transform = sx, sy
-        self.transform_stack[-1] = tx, ty
+        state = self.graphic_states[-1]
+        state.transform.translate(_sf.Vector2(x, y))
 
-    def push_transform(self):
-        transform = 0, 0
-        self.transform_stack.append(transform)
+    def push_state(self):
+        state = _sf.RenderStates()
+        if len(self.graphic_states) > 0:
+            old_state = self.graphic_states[-1]
+            state.transform.combine(old_state.transform)
+        self.graphic_states.append(state)
 
-    def pop_transform(self):
-        tx, ty = self.transform_stack.pop()
-        sx, sy = self.summed_transform
-        sx -= tx ; sy -= ty
-        self.summed_transform = sx, sy
-        if len(self.transform_stack) == 0:
-            self.push_transform()
+    def pop_state(self):
+        self.graphic_states.pop()
+        if len(self.graphic_states) == 0:
+            self.push_state()
 
     def draw(self, drawable):
         drawable.render(self)

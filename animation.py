@@ -44,7 +44,7 @@ class _AnimationFactory(object):
         if key in self.animations:
             return self.animations[key]
         else:
-            return self.raw_get(key)
+            return self.raw_get(key, *args, **kwargs)
 
     def raw_get(self, key, *args, **kwargs):
         directory = os.path.join(config['dir'], key)
